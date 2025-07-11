@@ -1,4 +1,6 @@
+import heapq
 import os
+from typing import Literal
 
 import cv2
 import mediapipe as mp
@@ -20,12 +22,14 @@ def calculate_angle(a, b, c):
     return np.degrees(np.arccos(np.clip(cosine_angle, -1.0, 1.0)))
 
 
-def process_video(video_path: str, leg: str = "right", draw_debug: bool = False, save_debug_path: str = None,
+def process_video(video_path: str, orientation: Literal["landscape", "portrait"], leg: str = "right",
+                  draw_debug: bool = False, save_debug_path: str = None,
                   output_image_path=None):
     cap = cv2.VideoCapture(video_path)
     max_angle = -1
     max_frame = None
     frames = 0
+    maxes = []
 
     ret, frame = cap.read()
     if not ret:
@@ -37,7 +41,9 @@ def process_video(video_path: str, leg: str = "right", draw_debug: bool = False,
             "debug_video_path": None
         }
 
-    frame = cv2.rotate(frame, cv2.ROTATE_90_CLOCKWISE)
+    if orientation == "portrait":
+        frame = cv2.rotate(frame, cv2.ROTATE_90_CLOCKWISE)
+
     height, width = frame.shape[:2]
 
     if save_debug_path:
@@ -55,8 +61,8 @@ def process_video(video_path: str, leg: str = "right", draw_debug: bool = False,
             if not ret:
                 break
 
-            # Could cause issues with landscape vids, test
-            frame = cv2.rotate(frame, cv2.ROTATE_90_CLOCKWISE)
+            if orientation == "portrait":
+                frame = cv2.rotate(frame, cv2.ROTATE_90_CLOCKWISE)
 
             image_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             results = pose.process(image_rgb)
@@ -93,6 +99,7 @@ def process_video(video_path: str, leg: str = "right", draw_debug: bool = False,
                     max_frame = frame.copy()
                     max_landmarks = results.pose_landmarks
                 frames += 1
+                maxes.append(angle)
 
                 if draw_debug:
                     mp_drawing.draw_landmarks(frame, results.pose_landmarks, mp_pose.POSE_CONNECTIONS)
@@ -107,6 +114,10 @@ def process_video(video_path: str, leg: str = "right", draw_debug: bool = False,
                     cv2.imshow("Pose Debug", frame)
                     if cv2.waitKey(1) & 0xFF == ord('q'):
                         break
+
+    n = 5
+    largest_n_knee_angles_sum = sum(heapq.nlargest(n, maxes))
+    average_largest_knee_angles = largest_n_knee_angles_sum / n
 
     if max_frame is not None and output_image_path:
         mp_drawing.draw_landmarks(
@@ -142,6 +153,7 @@ def process_video(video_path: str, leg: str = "right", draw_debug: bool = False,
 
     return {
         "max_knee_angle": max_angle,
+        "average_largest_knee_angles": average_largest_knee_angles,
         "frames_analyzed": frames,
         "output_image_path": output_image_path,
         "debug_video_path": save_debug_path

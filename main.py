@@ -26,14 +26,21 @@ app.add_middleware(
 )
 
 
-@app.post("/analyze/{leg}")
-async def analyze_video(leg: Literal["left", "right"], file: UploadFile = File(...)):
+TEMP_VIDEO_DIR = "temp_videos"
+os.makedirs(TEMP_VIDEO_DIR, exist_ok=True)
+
+
+@app.post("/analyze")
+async def analyze_video(leg: Literal["left", "right"],
+                        orientation: Literal["landscape", "portrait"],
+                        file: UploadFile = File(...)):
     if not file.filename.endswith(('.mp4', '.mov')):
         return JSONResponse(status_code=400, content={"error": "Invalid file format"})
 
     output_img = f"output_{uuid.uuid4().hex}.jpg"
     temp_path = f"temp_{uuid.uuid4().hex}_{file.filename}"
-    debug_video_path = f"debug_{uuid.uuid4().hex}.mp4"
+    debug_filename = f"debug_{uuid.uuid4().hex}.mp4"
+    debug_video_path = os.path.join(TEMP_VIDEO_DIR, debug_filename)
 
     file.file.seek(0)
     with open(temp_path, "wb") as buffer:
@@ -43,8 +50,9 @@ async def analyze_video(leg: Literal["left", "right"], file: UploadFile = File(.
     print("File size:", os.path.getsize(temp_path), "bytes")
 
     try:
+        # debug video does not output if save_debug_path
         result = process_video(temp_path, leg=leg, draw_debug=True, save_debug_path=debug_video_path,
-                               output_image_path=output_img)
+                               output_image_path=output_img, orientation=orientation)
         if result["max_knee_angle"] is None:
             return JSONResponse(status_code=422, content={"error": "No knee detected."})
         with open(output_img, "rb") as img_file:
@@ -55,8 +63,9 @@ async def analyze_video(leg: Literal["left", "right"], file: UploadFile = File(.
         return {
             "max_knee_angle": result["max_knee_angle"],
             "frames_analyzed": result.get("frames_analyzed", None),
+            "average_largest_knee_angles": result["average_largest_knee_angles"],
             "image_base64": img_base64,
-            "video_base64": video_base64
+            "video_filename": debug_filename
         }
 
     except Exception as e:
