@@ -7,7 +7,7 @@ from typing import Literal
 import uvicorn
 from fastapi import FastAPI, UploadFile, File
 from starlette.middleware.cors import CORSMiddleware
-from starlette.responses import JSONResponse, PlainTextResponse
+from starlette.responses import JSONResponse, PlainTextResponse, FileResponse
 
 from core_analyzer import process_video
 
@@ -57,8 +57,6 @@ async def analyze_video(leg: Literal["left", "right"],
             return JSONResponse(status_code=422, content={"error": "No knee detected."})
         with open(output_img, "rb") as img_file:
             img_base64 = base64.b64encode(img_file.read()).decode("utf-8")
-        with open(debug_video_path, "rb") as video_file:
-            video_base64 = base64.b64encode(video_file.read()).decode("utf-8")
 
         return {
             "max_knee_angle": result["max_knee_angle"],
@@ -76,8 +74,16 @@ async def analyze_video(leg: Literal["left", "right"],
         os.remove(temp_path)
         if os.path.exists(output_img):
             os.remove(output_img)
-        if os.path.exists(debug_video_path):
-            os.remove(debug_video_path)
+
+
+@app.get("/debug-video/{path}")
+async def get_debug_video(path: str):
+    print(f"Received request to fetch debug video with path {path}")
+    video_path = os.path.join(TEMP_VIDEO_DIR, path)
+    if not os.path.exists(video_path):
+        return {'error': 'File not found'}
+    # If temp vids start to pile up and
+    return FileResponse(video_path, media_type="video/mp4", filename=path)
 
 
 @app.get("/test")
