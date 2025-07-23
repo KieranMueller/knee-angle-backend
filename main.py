@@ -88,4 +88,4 @@ async def get_debug_video(path: str):
 @app.get("/test")
 async def test_get():
     print("Received Request")
-    return {"message": "Status: Backend is running"}
+    return {"message": "Status: Backend is running!"}
