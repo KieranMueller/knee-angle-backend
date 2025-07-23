@@ -77,7 +77,7 @@ jobs:
           slot-name: 'Production'
       - name: Set startup command
         run: |
-          az webapp config set --name fastapi-mvp \
+          az webapp config set --name knee-angle-backend \
                                --resource-group Side-Projects \
                                --startup-file "gunicorn -w 4 -k uvicorn.workers.UvicornWorker main:app"
           
