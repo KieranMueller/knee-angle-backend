@@ -4,7 +4,6 @@ import shutil
 import uuid
 from typing import Literal
 
-import uvicorn
 from fastapi import FastAPI, UploadFile, File
 from starlette.middleware.cors import CORSMiddleware
 from starlette.responses import JSONResponse, PlainTextResponse, FileResponse
@@ -19,12 +18,11 @@ origins = [
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,  # change back to origins
+    allow_origins=["*"],  # change back to origins
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
 
 TEMP_VIDEO_DIR = "temp_videos"
 os.makedirs(TEMP_VIDEO_DIR, exist_ok=True)
@@ -71,7 +69,8 @@ async def analyze_video(leg: Literal["left", "right"],
         return PlainTextResponse(f"Error: {str(e)}", status_code=500)
 
     finally:
-        os.remove(temp_path)
+        if os.path.exists(temp_path):
+            os.remove(temp_path)
         if os.path.exists(output_img):
             os.remove(output_img)
 
@@ -90,7 +89,3 @@ async def get_debug_video(path: str):
 async def test_get():
     print("Received Request")
     return {"message": "Status: Backend is running"}
-
-
-if __name__ == "__main__":
-    uvicorn.run(app, host="127.0.0.1", port=8000)
