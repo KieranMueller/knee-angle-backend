@@ -2,7 +2,7 @@
 # More GitHub Actions for Azure: https://github.com/Azure/actions
 # More info on Python, GitHub Actions, and Azure App Service: https://aka.ms/python-webapps-actions
 
-name: Build and deploy Python app to Azure Web App - knee-angle-backend
+name: Build and deploy Python app to Azure Web App - knee-angle-backend3
 
 on:
   push:
@@ -39,6 +39,6 @@ jobs:
 
       - name: Deploy container to Azure Web App
         run: |
-          az webapp config container set --name knee-angle-backend \
+          az webapp config container set --name knee-angle-backend3 \
                                          --resource-group knee-angle-backend3_group \
                                          --container-image-name kieranmueller/knee-angle-backend-container:latest
