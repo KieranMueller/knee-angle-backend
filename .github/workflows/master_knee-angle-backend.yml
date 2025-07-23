@@ -40,5 +40,5 @@ jobs:
       - name: Deploy container to Azure Web App
         run: |
           az webapp config container set --name knee-angle-backend \
-                                         --resource-group Side-Projects \
+                                         --resource-group knee-angle-backend3_group \
                                          --container-image-name kieranmueller/knee-angle-backend-container:latest
