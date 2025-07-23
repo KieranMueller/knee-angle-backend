@@ -41,4 +41,4 @@ jobs:
         run: |
           az webapp config container set --name knee-angle-backend \
                                          --resource-group Side-Projects \
-                                         --docker-custom-image-name kieranmueller/knee-angle-backend-container:latest
+                                         --container-image-name kieranmueller/knee-angle-backend-container:latest
